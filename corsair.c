@@ -13,48 +13,52 @@
 #include "corsair.h"
 
 
-// void read_public_key(char *file)
-// {
-// 	int 			key_type = EVP_PKEY_base_id(private_key);
-// 	const char		*filename = "private.pem";
-// 	char 			*n_hex = BN_bn2hex(n);
-// 	char 			*e_hex = BN_bn2hex(e);
-// 	const BIGNUM	*n;
-// 	const BIGNUM	*e;
-// 	BIO				*bio = NULL;
-// 	EVP_PKEY		*public_key = NULL;
-// 	RSA 			*rsa_key = NULL;
+void read_public_key(char *file)
+{
+    ERR_load_BIO_strings();
+    ERR_load_crypto_strings();
 
-// 	OpenSSL_add_all_algorithms();
-// 	ERR_load_BIO_strings();
-// 	ERR_load_crypto_strings();
-// 	bio = BIO_new_file(filename, "r");
-// 	if (bio == NULL) 
-// 	{
-// 		ERR_print_errors_fp(stderr);
-// 		exit(EXIT_FAILURE);
-// 	}
-// 	if (key_type != EVP_PKEY_RSA)
-// 	{
-// 		fprintf(stderr, "The key is not an RSA key.\n");
-// 		exit(EXIT_FAILURE);
-// 	}
-// 	rsa_key = PEM_read_bio_RSA_PUBKEY(bio, NULL, NULL, NULL);
-// 	if (rsa_key == NULL)
-// 	{
-// 		ERR_print_errors_fp(stderr);
-// 		exit(EXIT_FAILURE);
-// 	}
-// 	RSA_get0_key(rsa_key, &n, &e, NULL);
-// 	printf("n: %s\n", n_hex);
-// 	printf("e: %s\n", e_hex);
-// 	OPENSSL_free(n_hex);
-// 	OPENSSL_free(e_hex);
-// 	RSA_free(rsa_key);
-// 	BIO_free_all(bio);
-// 	EVP_cleanup();
-// 	ERR_free_strings();
-// }
+    BIO *bio = NULL;
+    const char *filename = "public.pem";
+    bio = BIO_new_file(filename, "r");
+    if (bio == NULL) {
+        ERR_print_errors_fp(stderr);
+        exit(EXIT_FAILURE);
+    }
+
+    EVP_PKEY *evp_key = NULL;
+    evp_key = PEM_read_bio_PUBKEY(bio, NULL, 0, NULL);
+    if (evp_key == NULL) {
+        ERR_print_errors_fp(stderr);
+        exit(EXIT_FAILURE);
+    }
+
+    RSA *rsa_key = NULL;
+    rsa_key = EVP_PKEY_get1_RSA(evp_key);
+    if (rsa_key == NULL) {
+        ERR_print_errors_fp(stderr);
+        exit(EXIT_FAILURE);
+    }
+
+    const BIGNUM *n, *e;
+    RSA_get0_key(rsa_key, &n, &e, NULL);
+
+    char *n_hex = BN_bn2hex(n);
+    char *e_hex = BN_bn2hex(e);
+
+	printf("Public key\n");
+    printf("n: %s\n", n_hex);
+    printf("e: %s\n", e_hex);
+
+    OPENSSL_free(n_hex);
+    OPENSSL_free(e_hex);
+
+    RSA_free(rsa_key);
+    EVP_PKEY_free(evp_key);
+    BIO_free_all(bio);
+    ERR_free_strings();
+
+}
 
 void	read_private_key(char *file)
 {
@@ -98,6 +102,7 @@ void	read_private_key(char *file)
 	char *dmq1_hex = BN_bn2hex(dmq1);
 	char *iqmp_hex = BN_bn2hex(iqmp);
 
+	printf("Private key\n");
 	printf("n: %s\n", n_hex);
 	printf("e: %s\n", e_hex);
 	printf("d: %s\n", d_hex);
@@ -126,7 +131,7 @@ void	read_private_key(char *file)
 int main(void) 
 {
 	read_private_key("private.pem");
-	// read_public_key("public.pem");
+	read_public_key("public.pem");
 
 	return (0);
 }
