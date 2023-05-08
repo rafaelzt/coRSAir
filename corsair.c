@@ -6,69 +6,44 @@
 /*   By: rzamolo- <rzamolo-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/04 12:10:54 by rzamolo-          #+#    #+#             */
-/*   Updated: 2023/05/05 13:03:18 by rzamolo-         ###   ########.fr       */
+/*   Updated: 2023/05/08 14:10:01 by rzamolo-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "corsair.h"
 
-void	initialize_openssl(void)
-{
-	SSL_load_error_strings();
-	OpenSSL_add_ssl_algorithms();
-}
 
-EVP_PKEY	*read_pem_file(const char *pem_filename)
-{
-	FILE		*pem_file;
-	EVP_PKEY	*pkey;
+int main() {
+	OpenSSL_add_all_algorithms();
+	ERR_load_BIO_strings();
+	ERR_load_crypto_strings();
 
-	pem_file = fopen(pem_filename, "r");
-	if (pem_file == NULL)
-	{
-		printf("Error: cannot open file %s\n", pem_filename);
-		return (NULL);
-	}
-	pkey = PEM_read_PrivateKey(pem_file, NULL, NULL, NULL);
-	if (!pkey)
-	{
-		fprintf(stderr, "Error: PEM_read_X509 returned NULL\n");
+	BIO *bio = NULL;
+	const char *filename = "private.pem";
+	bio = BIO_new_file(filename, "r");
+	if (bio == NULL) {
 		ERR_print_errors_fp(stderr);
-	}
-	fclose(pem_file);
-	return (pkey);
-}
-
-
-int	main(int argc, char *argv[])
-{
-	const char	*pem_filename;
-	EVP_PKEY	*pkey;
-
-	initialize_openssl();
-
-	pem_filename = "public.pem";
-	pkey = read_pem_file(pem_filename);
-
-	if (!pkey)
-	{
-		printf("Error: cannot read file %s\n", pem_filename);
-		return (1);
+		exit(EXIT_FAILURE);
 	}
 
-	printf("ArgC: %d\n", argc);
-	printf("ArgV[0]: %s\n", argv[0]);
-	printf("ArgV[1]: %s\n", argv[1]);
+	EVP_PKEY *private_key = NULL;
+	private_key = PEM_read_bio_PrivateKey(bio, NULL, 0, NULL);
+	if (private_key == NULL) {
+		ERR_print_errors_fp(stderr);
+		exit(EXIT_FAILURE);
+	}
 
-	printf("OpenSSL version: %s\n", OPENSSL_VERSION_TEXT);
-	printf("OpenSSL library compiled version: %s\n", \
-			SSLeay_version(SSLEAY_VERSION));
+	int key_type = EVP_PKEY_base_id(private_key);
+	int	key_size = EVP_PKEY_size(private_key);
+
+	printf("Key type: %s\n", (key_type == EVP_PKEY_RSA) ? "RSA" : "Not RSA");
+	printf("Key size: %s\n", (key_size == 2048) ? "2048" : "Not 2048");
 
 
-    // Clean up
-	EVP_PKEY_free(pkey);
+	EVP_PKEY_free(private_key);
+	BIO_free_all(bio);
 	EVP_cleanup();
 	ERR_free_strings();
 
-	return (0);
+	return 0;
 }
