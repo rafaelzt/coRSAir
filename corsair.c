@@ -6,7 +6,7 @@
 /*   By: rzamolo- <rzamolo-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/04 12:10:54 by rzamolo-          #+#    #+#             */
-/*   Updated: 2023/05/09 19:21:27 by rzamolo-         ###   ########.fr       */
+/*   Updated: 2023/05/12 10:22:09 by rzamolo-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,9 +21,9 @@
 // RSA_get0_key
 // BN_bn2hex
 
-void specific_function(const char* filename) {
-    // Implement your specific function to process each file here
-    read_public_key(filename);
+void	specific_function(const char* filename)
+{
+	read_public_key(filename);
 }
 
 
@@ -33,43 +33,34 @@ void read_public_key(char *file)
 	ERR_load_crypto_strings();
 
 	BIO *bio = NULL;
-	// const char *filename = "public.pem";
 	bio = BIO_new_file(file, "r");
 	if (bio == NULL) {
 		ERR_print_errors_fp(stderr);
 		exit(EXIT_FAILURE);
 	}
-
 	EVP_PKEY *evp_key = NULL;
 	evp_key = PEM_read_bio_PUBKEY(bio, NULL, 0, NULL);
 	if (evp_key == NULL) {
 		ERR_print_errors_fp(stderr);
 		exit(EXIT_FAILURE);
 	}
-
 	RSA *rsa_key = NULL;
 	rsa_key = EVP_PKEY_get1_RSA(evp_key);
 	if (rsa_key == NULL) {
 		ERR_print_errors_fp(stderr);
 		exit(EXIT_FAILURE);
 	}
-
 	const BIGNUM *n, *e;
 	RSA_get0_key(rsa_key, &n, &e, NULL);
-
 	char *n_hex = BN_bn2hex(n);
 	char *e_hex = BN_bn2hex(e);
-	
-	//
 	BN_CTX *ctx = BN_CTX_new();
 	char *dec_str = BN_bn2dec(n);
 	if (dec_str == NULL) {
 		printf("Error converting BIGNUM to decimal string\n");
-    }
-
-    // Print the decimal string
+	}
     printf("BIGNUM in decimal: %s\n", dec_str);
-	//
+
 
 	printf("Public key (%s)\n", file);
 	printf("n: %s\n", n_hex);
@@ -152,30 +143,45 @@ void read_private_key(char *file)
 	EVP_cleanup();
 	ERR_free_strings();
 }
+
+int	compare_n(BIGNUM *n_1, BIGNUM *n_2)
+{
+
+	BN_CTX *ctx = BN_CTX_new();
+
+	c = BN_gdc(n_1, n_2, ctx);
+	print(c);
+}
+
 int main(void) {
-    const char *folder = "./challenge_corsair/";  // Set the path to the folder containing the PEM files
-    DIR *dir_ptr;                                  // Declare a directory stream
-    struct dirent *entry;                          // Declare a directory entry structure
-    
-    dir_ptr = opendir(folder);                     // Open the directory stream
+	const char *folder = "./challenge_corsair/";
+	DIR *dir_ptr;
+	struct dirent *entry;
 
-    if (dir_ptr == NULL) {                         // Check if the directory stream was successfully opened
-        perror("Unable to read directory");        // Print error message and exit if not
-        return 1;
-    }
+	dir_ptr = opendir(folder);
 
-    while ((entry = readdir(dir_ptr)) != NULL) {   // Loop through the directory entries
-        if (entry->d_type == DT_REG) {             // Check if the entry is a regular file
-            char *ext = strrchr(entry->d_name, '.');  // Find the last occurrence of '.' in the filename to get the file extension
-            
-            if (ext != NULL && strcmp(ext, ".pem") == 0) {  // Check if the file extension is ".pem"
-                char filepath[512];               // Declare a buffer to store the full file path
-                snprintf(filepath, sizeof(filepath), "%s/%s", folder, entry->d_name);  // Construct the full file path
-                specific_function(filepath);      // Call the specific function with the full file path as argument
-            }
-        }
-    }
+	if (dir_ptr == NULL) 
+	{
+		perror("Unable to read directory");
+		return (1);
+	}
 
-    closedir(dir_ptr);                             // Close the directory stream
-    return 0;
+	while ((entry = readdir(dir_ptr)) != NULL)
+	{
+		if (entry->d_type == DT_REG)
+		{
+			char *ext = strrchr(entry->d_name, '.');
+
+			if (ext != NULL && strcmp(ext, ".pem") == 0)
+			{
+				char filepath[512];
+				snprintf(filepath, sizeof(filepath), "%s/%s", folder, \
+				entry->d_name);
+				specific_function(filepath);
+			}
+		}
+	}
+
+	closedir(dir_ptr);
+	return (0);
 }
